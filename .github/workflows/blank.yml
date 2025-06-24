@@ -1,4 +1,39 @@
-- uses: aws-actions/configure-aws-credentials@v2
-  with:
-    role-to-assume: arn:aws:iam::905418357533:role/Terraform-Org-Role
-    aws-region: ap-south-1
+name: Terraform Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write       # 👈 Required for OIDC!
+      contents: read        # 👈 To clone the repo
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume:  arn:aws:iam::905418357533:role/Terraform-Org-Role
+        aws-region: ap-south-1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.6.6
+
+    - name: Terraform init
+      run: terraform init
+
+    - name: Terraform plan
+      run: terraform plan
+
+    - name: Terraform apply
+      if: github.ref == 'refs/heads/main'
+      run: terraform apply -auto-approve
